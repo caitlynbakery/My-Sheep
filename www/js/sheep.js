@@ -14,6 +14,7 @@ var GameState = {
 
         this.score = 0;
         
+        
     },
 
     preload: function(){
@@ -47,9 +48,10 @@ var GameState = {
         this.mushrooms.create(380, 620, 'mushroom');
 
         this.sheep = this.add.sprite(505, 705, 'sheep');
-        this.sheep.animations.add('walk', [5, 6, 7], 6, true);
-        this.sheep.animations.add('walkUp', [0, 1, 2], 6, true);
-        this.sheep.animations.add('walkDown', [11, 12, 13], 6, true);
+        
+        this.sheep.animations.add('walk', [5, 6, 7], 8, true);
+        this.sheep.animations.add('walkUp', [0, 1, 2], 8, true);
+        this.sheep.animations.add('walkDown', [11, 12, 13], 8, true);
         this.downButton = this.add.button(495, 1085, 'button');
         this.upButton = this.add.button(495, 935, 'button');
         this.rightButton = this.add.button(600, 1005, 'button');
@@ -73,6 +75,8 @@ var GameState = {
         this.game.physics.arcade.enable(this.sheep);
         this.sheep.anchor.setTo(0.5);
         
+        this.game.physics.arcade.enable(this.flowers);
+        this.game.physics.arcade.enable(this.mushrooms);
         this.flowers.setAll('body.immovable', true);
         this.flowers.setAll('body.allowGravity', false);
 
@@ -81,7 +85,9 @@ var GameState = {
 
         
         this.sheep.body.collideWorldBounds = true;
-        this.sheep.customParams = {direction: 'stop'};
+        this.sheep.customParams = {isMovingLeft: false, isMovingRight: false,
+    isMovingDown: false, isMovingUp: false, speed: 200};
+    
  
     },
 
@@ -89,35 +95,37 @@ var GameState = {
         this.game.physics.arcade.collide(this.sheep, this.flowers, function(){
             this.boing.play();
             this.score = this.score + 1;
+            this.changeDirection();
 
         }, null, this);
         this.game.physics.arcade.collide(this.sheep, this.mushrooms, function(){
             this.farm.play();
             this.score = this.score + 1;
+            this.changeDirection();
         }, null, this);
 
         this.text.destroy();
         this.text = this.add.text(0, 0, "Score: " + this.score, this.style);
         
-        if(this.cursors.right.isDown || this.sheep.customParams.direction == "right"){
-            this.sheep.body.velocity.x = 100;
+        if(this.cursors.right.isDown || this.sheep.customParams.isMovingRight){
+            this.sheep.body.velocity.x = this.sheep.customParams.speed;
             this.sheep.scale.setTo(1, 1);
             this.sheep.animations.play('walk');
         }
 
-        else if(this.cursors.left.isDown || this.sheep.customParams.direction == 'left'){
-            this.sheep.body.velocity.x = -100;
+        else if(this.cursors.left.isDown || this.sheep.customParams.isMovingLeft){
+            this.sheep.body.velocity.x = -this.sheep.customParams.speed;
             this.sheep.scale.setTo(-1, 1);
             this.sheep.animations.play('walk');
         }
 
-        else if(this.cursors.up.isDown || this.sheep.customParams.direction == "up"){
-            this.sheep.body.velocity.y = -100;
+        else if(this.cursors.up.isDown || this.sheep.customParams.isMovingUp){
+            this.sheep.body.velocity.y = -this.sheep.customParams.speed;
             this.sheep.animations.play('walkUp');
         }
 
-        else if(this.cursors.down.isDown || this.sheep.customParams.direction == "down"){
-            this.sheep.body.velocity.y = 100;
+        else if(this.cursors.down.isDown || this.sheep.customParams.isMovingDown){
+            this.sheep.body.velocity.y = this.sheep.customParams.speed;
             this.sheep.animations.play('walkDown');
         }
 
@@ -125,25 +133,74 @@ var GameState = {
             this.sheep.frame = 11;
             this.sheep.body.velocity.x = 0;
             this.sheep.body.velocity.y = 0;
-            this.sheep.customParams.direction = 'stop';
         }
         this.leftButton.events.onInputDown.add(function(){
-            this.sheep.customParams.direction = 'left';
+            this.sheep.customParams.isMovingLeft = true;
           
         }, this);
 
+        this.leftButton.events.onInputUp.add(function(){
+            this.sheep.customParams.isMovingDown = false;
+            this.sheep.customParams.isMovingUp = false;
+            this.sheep.customParams.isMovingLeft = false;
+            this.sheep.customParams.isMovingRight = false;
+        }, this);
+
         this.rightButton.events.onInputDown.add(function(){
-            this.sheep.customParams.direction = "right";
+            this.sheep.customParams.isMovingRight = true;
+        }, this);
+
+        this.rightButton.events.onInputUp.add(function(){
+            this.sheep.customParams.isMovingDown = false;
+            this.sheep.customParams.isMovingUp = false;
+            this.sheep.customParams.isMovingLeft = false;
+            this.sheep.customParams.isMovingRight = false;
         }, this);
 
         this.upButton.events.onInputDown.add(function(){
-            this.sheep.customParams.direction = "up";
+            this.sheep.customParams.isMovingUp = true;
+        }, this);
+
+        this.upButton.events.onInputUp.add(function(){
+            this.sheep.customParams.isMovingUp = false;
+            this.sheep.customParams.isMovingDown = false;
+            this.sheep.customParams.isMovingLeft = false;
+            this.sheep.customParams.isMovingRight = false;
         }, this);
 
         this.downButton.events.onInputDown.add(function(){
-            this.sheep.customParams.direction = "down";
+            this.sheep.customParams.isMovingDown = true;
         }, this);
 
+        this.downButton.events.onInputUp.add(function(){
+            this.sheep.customParams.isMovingDown = false;
+            this.sheep.customParams.isMovingUp = false;
+            this.sheep.customParams.isMovingLeft = false;
+            this.sheep.customParams.isMovingRight = false;
+
+        }, this);
+
+    },
+
+    changeDirection: function(){
+        if(this.sheep.customParams.isMovingRight == true){
+            this.sheep.customParams.isMovingRight = false;
+            this.sheep.customParams.isMovingLeft = true;
+            console.log('hi');
+        }
+        else if(this.sheep.customParams.isMovingLeft == true){
+            this.sheep.customParams.isMovingLeft = false;
+            this.sheep.customParams.isMovingRight = true;
+        }
+        else if(this.sheep.customParams.isMovingUp == true){
+            this.sheep.customParams.isMovingUp = false;
+            this.sheep.customParams.isMovingDown = true;
+        }
+        else if(this.sheep.customParams.isMovingDown == true){
+            this.sheep.customParams.isMovingDown = false;
+            this.sheep.customParams.isMovingUp = true;
+        }
+        
     }
 }
 
